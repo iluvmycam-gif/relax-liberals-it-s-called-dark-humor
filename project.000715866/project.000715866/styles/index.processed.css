@@ -1,0 +1,216 @@
+:root {
+  --bg: #0f1724;
+  --card: #111827;
+  --muted: #9ca3af;
+  --accent: #ff7a18;
+  --accent2: #0ea5e9;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* page layout */
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #071029 0%, #091827 100%);
+  color: #e6eef8;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px;
+}
+
+/* app shell */
+.app {
+  width: 980px;
+  max-width: 96%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
+}
+
+/* headings */
+h1 {
+  margin: 6px 0 20px;
+  font-size: 22px;
+}
+
+/* pages (visibility) */
+.page {
+  display: none;
+}
+.page.active {
+  display: block;
+}
+
+/* layout utilities */
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* controls */
+button {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #061121;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+input,
+select {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 10px;
+  border-radius: 8px;
+  color: #e6eef8;
+  min-width: 220px;
+}
+
+label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* cards & lists */
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.players-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-pill {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.player-pill.selected {
+  outline: 3px solid rgba(255, 122, 24, 0.12);
+  background: linear-gradient(90deg, rgba(255, 122, 24, 0.08), rgba(14, 165, 233, 0.04));
+}
+
+/* misc */
+.small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hand {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.play-card {
+  min-width: 140px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+.play-card.highlight {
+  outline: 3px solid rgba(14, 165, 233, 0.12);
+  transform: translateY(-6px);
+}
+
+.pile {
+  min-width: 180px;
+  min-height: 90px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #0b1220, #091020);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(255, 255, 255, 0.03);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.end-btn {
+  background: #2b2f36;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal .card {
+  max-width: 420px;
+}
+
+.score {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.notice {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

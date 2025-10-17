@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Relax Liberals, It's Called Dark Humor</title>
+  <style>
+    :root{--bg:#0f1724;--card:#111827;--muted:#9ca3af;--accent:#ff7a18;--accent2:#0ea5e9}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:linear-gradient(180deg,#071029 0%, #091827 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px;}
+    .app{width:980px;max-width:96%;background:rgba(255,255,255,0.02);border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+    h1{margin:6px 0 20px;font-size:22px}
+    .page{display:none}
+    .page.active{display:block}
+    .row{display:flex;gap:12px;align-items:center}
+    .col{display:flex;flex-direction:column;gap:10px}
+    button{background:linear-gradient(90deg,var(--accent) 0%,var(--accent2) 100%);border:0;padding:10px 14px;border-radius:8px;color:#061121;cursor:pointer;font-weight:600}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:8px}
+    input,select{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:#e6eef8;min-width:220px}
+    label{font-size:13px;color:var(--muted)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+    .players-list{display:flex;flex-wrap:wrap;gap:8px}
+    .player-pill{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+    .player-pill.selected{outline:3px solid rgba(255,122,24,0.12);background:linear-gradient(90deg,rgba(255,122,24,0.08), rgba(14,165,233,0.04))}
+    .small{font-size:13px;color:var(--muted)}
+    .center{display:flex;align-items:center;justify-content:center}
+    .hand{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .play-card{min-width:140px;padding:10px;border-radius:10px;background:var(--card);border:1px solid rgba(255,255,255,0.04);cursor:pointer}
+    .play-card.highlight{outline:3px solid rgba(14,165,233,0.12);transform:translateY(-6px)}
+    .pile{min-width:180px;min-height:90px;border-radius:10px;background:linear-gradient(180deg,#0b1220,#091020);display:flex;align-items:center;justify-content:center;border:1px dashed rgba(255,255,255,0.03)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .end-btn{background:#2b2f36;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:var(--muted);cursor:pointer}
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:flex;align-items:center;justify-content:center}
+    .modal .card{max-width:420px}
+    .score{font-size:18px;font-weight:700;color:#fff}
+    .muted{color:var(--muted)}
+    .notice{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    /* small responsiveness */
+    @media (max-width:720px){
+      .app{padding:14px}
+      .row{flex-wrap:wrap}
+      input,select{min-width:unset;width:100%}
+      .hand .play-card{min-width:120px}
+      .col .card{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div><h1>Relax Liberals, It's Called Dark Humor</h1></div>
+      <div><button id="endGameTop" class="ghost">End Game</button></div>
+    </div>
+
+    <!-- PAGE 1: START MENU (ONLY START MENU) -->
+    <div id="page1" class="page active">
+      <div class="card col center" style="padding:36px">
+        <h2>Start Menu</h2>
+        <div class="row center" style="margin-top:18px">
+          <button id="btnNew" class="ghost">Start a New Game</button>
+          <button id="btnJoin" class="ghost">Join a Game</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2: CREATE OR JOIN FORMS (shown after selecting Start or Join) -->
+    <div id="page2" class="page">
+      <div class="card col">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="page2title">Create / Join Lobby</h2>
+          <div class="small muted">Seed controls shuffle</div>
+        </div>
+
+        <!-- CREATE FORM -->
+        <div id="createForm" class="col" style="display:none">
+          <label>Name</label>
+          <input id="createPlayerName" placeholder="Your name" />
+          <label>Lobby Seed (optional)</label>
+          <input id="createLobbySeed" placeholder="Leave blank for random seed" />
+          <label>Password (optional — leave empty for public)</label>
+          <input id="createLobbyPassword" placeholder="Optional password" />
+          <label>Max Players (leave empty = unlimited)</label>
+          <input id="createLobbyLimit" placeholder="e.g. 8" />
+          <div class="row" style="margin-top:8px">
+            <button id="createLobbyBtn" class="ghost">Create Lobby</button>
+            <button id="backToMenuFromCreate" class="ghost">Back</button>
+          </div>
+        </div>
+
+        <!-- JOIN FORM -->
+        <div id="joinForm" class="col" style="display:none">
+          <label>Name</label>
+          <input id="joinPlayerName" placeholder="Your name" />
+          <label>Lobby Seed</label>
+          <input id="joinLobbySeed" placeholder="Enter lobby seed" />
+          <label>Password (if required)</label>
+          <input id="joinLobbyPassword" placeholder="Password (if lobby is private)" />
+          <div class="row" style="margin-top:8px">
+            <button id="joinExistingBtn" class="ghost">Join Lobby</button>
+            <button id="backToMenuFromJoin" class="ghost">Back</button>
+          </div>
+        </div>
+
+        <!-- LOBBY VIEW (appears after create or successful join) -->
+        <div id="lobbyView" style="display:none;margin-top:12px" class="card col">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <div class="small muted">Lobby Seed</div>
+              <div id="lobbySeedLabel" class="score"></div>
+              <div class="small muted">Password: <span id="lobbyPassLabel" class="muted"></span></div>
+              <div class="small muted">Max players: <span id="lobbyLimitLabel" class="muted">unlimited</span></div>
+            </div>
+            <div>
+              <div class="small muted">Players in lobby</div>
+              <div id="playersCount" class="score">0</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="small muted">Player list</div>
+            <div id="playersList" class="players-list" style="margin-top:8px"></div>
+          </div>
+
+          <div class="row" style="margin-top:10px;justify-content:space-between">
+            <div class="row">
+              <input id="fakePlayerName" placeholder="Add local player name" />
+              <button id="addLocalPlayer" class="ghost">Add Player</button>
+            </div>
+            <div class="controls">
+              <button id="startGameBtn" class="ghost">Go to Vote</button>
+              <button id="leaveLobby" class="ghost">Leave Lobby</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE 3: VOTING -->
+    <div id="page3" class="page">
+      <div class="card col">
+        <div class="row" style="justify-content:space-between">
+          <div><h2>Whoever is willing to scream penis the loudest gets to be the first card czar</h2></div>
+          <div>
+            <label class="small muted">You are:</label>
+            <select id="activeVoter"></select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small muted">Click a player's name to highlight (toggle). When ready, press Vote to cast your player's official vote for the highlighted name.</div>
+          <div id="votePlayers" class="players-list" style="margin-top:10px"></div>
+        </div>
+
+        <div class="row" style="margin-top:12px;justify-content:space-between">
+          <div><button id="castVote" class="ghost">Vote</button><button id="revoteBtn" class="ghost" style="display:none">Start Revote</button></div>
+          <div><div class="small muted">Votes cast:</div><div id="votesStatus" class="muted">0 / 0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: ROUND PLAY -->
+    <div id="page4" class="page">
+      <div class="card col">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <h2>Round Play</h2>
+            <div class="small muted">Current Card Czar: <span id="currentCzar" class="score"></span></div>
+            <div class="small muted">Prompt deck remaining: <span id="promptRemain" class="muted">0</span> · Playing deck remaining: <span id="playRemain" class="muted">0</span></div>
+          </div>
+          <div>
+            <label class="small muted">You are:</label>
+            <select id="activePlayerSelect"></select>
+          </div>
+        </div>
+
+        <div class="row" style="gap:18px;margin-top:12px">
+          <div style="flex:1;">
+            <div class="small muted">Prompt Card</div>
+            <div id="promptCard" class="pile card" style="margin-top:8px;min-height:120px"></div>
+
+            <div style="margin-top:12px">
+              <div class="small muted">Czar's pile (face-down submissions)</div>
+              <div id="czarPile" class="pile" style="margin-top:8px"></div>
+              <div class="row" style="margin-top:8px">
+                <button id="revealNext" class="ghost">Reveal Next</button>
+                <button id="czarChoose" class="ghost" style="display:none">Confirm</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:420px;">
+            <div class="small muted">Your Hand (only visible when you are a non-czar player)</div>
+            <div id="handArea" class="card" style="margin-top:8px;min-height:200px">
+              <div id="hand" class="hand"></div>
+              <div style="margin-top:10px"><button id="sendIt" class="ghost">Send It</button></div>
+            </div>
+
+            <div style="margin-top:10px" class="card">
+              <div class="small muted">Round Controls</div>
+              <div style="margin-top:8px" class="row">
+                <button id="nextRound" class="ghost" style="display:none">Next Round</button>
+                <button id="autoReveal" class="ghost">Reveal All (czar)</button>
+              </div>
+              <div style="margin-top:8px" class="small muted">Scores</div>
+              <div id="scoreboard" style="margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: LEADERBOARD -->
+    <div id="page5" class="page">
+      <div class="card col">
+        <h2>Leaderboard</h2>
+        <div id="leaderboard" style="margin-top:10px"></div>
+        <div style="margin-top:14px"><button id="backToMenu2" class="ghost">Back to Menu</button></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="endModal" style="display:none" class="modal center">
+    <div class="card col">
+      <div class="small muted">Are you sure you want to end the game?</div>
+      <div class="row" style="margin-top:12px;justify-content:flex-end">
+        <button id="confirmEnd" class="ghost">Yes</button>
+        <button id="cancelEnd" class="ghost">No</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const pages = {
+        1: document.getElementById('page1'),
+        2: document.getElementById('page2'),
+        3: document.getElementById('page3'),
+        4: document.getElementById('page4'),
+        5: document.getElementById('page5')
+      }
+      function showPage(n){
+        Object.values(pages).forEach(p => p.classList.remove('active'))
+        pages[n].classList.add('active')
+      }
+
+      const btnNew = document.getElementById('btnNew'), btnJoin = document.getElementById('btnJoin')
+      const createForm = document.getElementById('createForm'), joinForm = document.getElementById('joinForm')
+      const createPlayerName = document.getElementById('createPlayerName'), createLobbySeed = document.getElementById('createLobbySeed'), createLobbyPassword = document.getElementById('createLobbyPassword'), createLobbyLimit = document.getElementById('createLobbyLimit'), createLobbyBtn = document.getElementById('createLobbyBtn'), backToMenuFromCreate = document.getElementById('backToMenuFromCreate')
+      const joinPlayerName = document.getElementById('joinPlayerName'), joinLobbySeed = document.getElementById('joinLobbySeed'), joinLobbyPassword = document.getElementById('joinLobbyPassword'), joinExistingBtn = document.getElementById('joinExistingBtn'), backToMenuFromJoin = document.getElementById('backToMenuFromJoin')
+      const lobbyView = document.getElementById('lobbyView'), lobbySeedLabel = document.getElementById('lobbySeedLabel'), lobbyPassLabel = document.getElementById('lobbyPassLabel'), lobbyLimitLabel = document.getElementById('lobbyLimitLabel'), playersList = document.getElementById('playersList'), playersCount = document.getElementById('playersCount')
+      const fakePlayerName = document.getElementById('fakePlayerName'), addLocalPlayer = document.getElementById('addLocalPlayer'), startGameBtn = document.getElementById('startGameBtn'), leaveLobby = document.getElementById('leaveLobby')
+
+      const activeVoter = document.getElementById('activeVoter'), votePlayers = document.getElementById('votePlayers'), castVote = document.getElementById('castVote'), votesStatus = document.getElementById('votesStatus'), revoteBtn = document.getElementById('revoteBtn')
+      const activePlayerSelect = document.getElementById('activePlayerSelect'), promptCard = document.getElementById('promptCard'), hand = document.getElementById('hand'), handArea = document.getElementById('handArea'), sendIt = document.getElementById('sendIt'), czarPile = document.getElementById('czarPile'), revealNext = document.getElementById('revealNext'), czarChoose = document.getElementById('czarChoose'), scoreboard = document.getElementById('scoreboard'), nextRound = document.getElementById('nextRound'), autoReveal = document.getElementById('autoReveal'), promptRemain = document.getElementById('promptRemain'), playRemain = document.getElementById('playRemain'), currentCzar = document.getElementById('currentCzar')
+
+      const endGameTop = document.getElementById('endGameTop'), endModal = document.getElementById('endModal'), confirmEnd = document.getElementById('confirmEnd'), cancelEnd = document.getElementById('cancelEnd'), leaderboard = document.getElementById('leaderboard'), backToMenu2 = document.getElementById('backToMenu2'), page2title = document.getElementById('page2title')
+
+      let lobbies = {}
+      let currentLobby = null
+
+      let promptCards = ["Now I don't support any type of violence, but with that being said I hope something unfortunate happens to ______.","While I may have no use for it ever, you gotta admit ______ is pretty cool.","Now, here me out...","______? That CANNOT be ideal for your gains.","Sugar, spice, and everything nice. These were the ingredients chosen to create the perfect little girls. But Professor Utonium accidentally added an extra ingredient to the concoction. Chemical ______.","Bro, I'm telling you invest in ______ right now. It's gonna work this time I swear.","______ is so underrated to be honest.","I just got back from Loserville and I did not know that ______ is there.","______ has got to be in the Epstein Files for sure.","It is generally a good rule of thumb to not mess with ______.","I know it's an opinion, but ______ generally just fucking sucks.","What was it that made Batman glad his parents are dead?","What gets you off? (Don't lie)","Imagine how much better the world would be if ______ wasn't a thing.","What is objectively a banger?","God, I hate ______.","Examples of stuff that are totally awesome sauce:","No prompt. Just play a card at random. Who fucking cares anymore? Prompts are a social construct anyway.","Who would be the 13th disciple?","Forget Michael Jordan, Wayne Gretzky, Simone Biles, Katie Ledecky, etc. The real greatest athlete of all-time is ______.","Shit like ______ is exactly why I still pay my taxes.","Public executions are bad but I do think you could make the argument that it is acceptable in the case of ______.","This and ______.","If you think that's bad, wait until you see ______.","Probably the only force in the entire universe that can stop a black hole. Behold, ______!","It wouldn't be a whimsical night if there wasn't ______.","According to the Catholic Church, the 8 deadly sins are pride, greed, wrath, envy, lust, gluttony, sloth, and ______.","We as a society need to collectively appreciate ______ more.","What is your 13th reason why?","What didn't you understand at first, but eventually it grew on you?","Breaking News: President Donald Trump has just signed Executive Order ______.","What is an example of something that is very cash money?","What is an example of something that is NOT very cash money?","Why even drink alcohol when you could ______?","No matter how bad you want it to be good, it just won't ever be good. It's just not gonna happen. Ever.","It wasn't a meteor that killed the dinosaurs, it was actually ______.","I may not want to admit it, but ______ had a good run.","The radical left is now proposing ______.","Welcome back to AMERICAN NINJA WARRIOR! I'm Matt Iseman here with Akbar Gbajabiamila and we've brought back a classic obstacle from the past back to our qualifying course, ______.","It isn't the gangsters in O-Block that you have to worry about, but  ______.","INTRODUCING THE STARTING LINEUP FOR ______.","Finally, it's about time that we've had more ______ in this world.","I don't understand why no music venues ever want to host ______.","______ really isn't so bad if you just think critically for two minutes.","The NYPD is currently investigating a case in which the main suspect is ______.","Our honor, I know my client is ______ and I know how suspicious that is but I promise they're innocent.","It truly is sad what happened to ______.","9 out of 10 dentists recommend this new unconventional but proven effective method to clean your teeth:","Ref, do something! ______ must be stopped!","Least unhinged Kanye West tweet:","Martin Luther King Jr. absolutely DID die for ______.","______ is how we evolved from being Neanderthals to modern humans.","Oh my god, is there really ______ in our civilization? Is nobody thinking of the children?","The first rule of Fight Club is that you do not talk about Fight Club. The second rule of Fight Club is that you do not talk about ______.","______! 'MURRRICCCCAAAAAA!","Alright, team. We're down by a touchdown and we need a score here. The odds don't look good but what the other team doesn't know is that we have a secret weapon. ______.","When I feel lost and confused I just think to myself, what would ______ do?","Forget the man vs bear debate. I would actually choose ______.","Do NOT let ______ drive under ANY circumstance.","It's just a cross country course. But instead of some rolling hills, the obstacle is ______."]
+      let playingCards = ["Charlie Kirk","Strangers that choose to sit next to you despite there being ample other seats to choose from","People that claim to be centrists but definitely are hardcore conservatives that are just too embarrassed to admit it","Dudes that pretend to be liberals because they think it'll get them laid","Donald Trump","Kristi Noem","ICE agents","Cruella de Vil","People that leave their cart in the middle of the parking lot","Kansas City Chiefs fans","Las Vegas Raiders fans","Los Angeles sports fans","Dallas Stars fans","Denver","Cleaning public school bathrooms with nothing except your tongue","That creepy ass guy I keep seeing on the bus that is completely butt-ass naked. But in his defense, he at least is wearing a propeller hat with a comedically oversized lollipop in his hand","Mark Robinson","An octopus that I have specifically trained to finger your asshole with all 8 of its arms at the same time","That recently divorced alcoholic dad that just sits in the garage all day playing How You Remind Me by Nickelback on loop all day","Cross country runners","Elon Musk","Laura Loomer","Palestine","Israel","People that go to another country and now they think they speak that country's language fluently for some reason","Your mom, hehe lol","Mein Kampf","Throwing snowballs with glass shards in them at children","Watching children trip and fall face first into concrete cement","Drunk driving","Vehicular homicide","Sadomasochism","An anatomically correct cardboard cutout of Judy Hopps from Zootopia","A parrot that repeats the same 5 racial slurs all day","Toaster baths","Spider-Man but he shoots cum out of his wrists instead","Cereal but with horse semen instead of milk","A stick","Full-body tickles","Getting curb stomped by an elephant","Drinking melted down plutonium","Belly button lint","Lots and lots of fentanyl","Samuel Adams Utopias","Moonshine","10 pounds of Godfather OG","Cyanide","Earl from Cloudy With a Chance of Meatballs","Lola Bunny from the original Space Jam","Shego","Aunt Fanny from Robots, trust me","Hova from the Ant Bully","Racial discrimination","Actually taking care of our mental health and trying to understand our emotions instead of taking a milligram of fentanyl every day","Doin your mom, lol","Emmett Till","The Holocaust","Adolf Hitler","A guy wanted for numerous human trafficking scandals in 46 US states, and in his words is wanted for the other 4 as well","Anal acupuncture therapy","Stealing food from a poor immigrant single-mother of 6","Dylan","Dillon","Belk","Candace Owens","Andrew Tate","Gay butt sex","Investing in Yo Gabba Gabba pornography","Me. You. Sex. Right here in the pastry aisle","The girl that has just gotten her heart broken for like the 6th time at this point but then gets into another relationship not even a week later and he's exactly like the last 6 guys she's dated. You don't want to victim blame but girl at some point...","Seltzers","IPA's","Getting my cooch pounded on Friday night","That girl in college that shows up to one class a month and when she does she's completely hungover, but she somehow has a 92","Extremely aggressive, vicious, and soul-taking backshots","Mongolian throat singing","Dropping my trousers and plopping my asshole directly on Trump's face","Shitting in the urinal","Slavery","Watergate","Rape","Ronald Reagan","Bill Clinton","Jeffrey Epstein","Making a lot of extremely bad decisions and then justifying it by saying that it's okay because you're in Las Vegas, even though you really are in New Jersey","Kansas","A gorilla that aggressively beats his chest when he sees you, then comes over and gently strokes you","That high dude at Walmart that you've seen peeing inside of the store multiple times","Grinding completely nude on a street light of the busiest intersection in the city (but at night though so it isn't as bad)","Drinking acid and then listening to Tame Impala until you die","Evicting the single-mother on food stamps because her rent payment was one nanosecond late","Riding the electric carts around Walmart","Getting white girl wasted","Injecting nitromethane directly up my asshole and then sliding like a snail around a Formula 1 track completely naked (for aerodynamic reasons of course)","Giving homeless people cardboard food","Mass shootings","Columbine","Missionary (why make it complicated?)","Bouncing cowgirl style on it","Talking about our feelings","Not taking our medications and then blaming our psychiatrist for not mentally improving","Bulimia","Balls. Sucks for anyone who got this card I couldn't think of anything else to put on it","Waffle House employees","People posting about how it's disrespectful to not care about Charlie Kirk's death like they weren't salivating at the idea of going to war with Chicago like 2 days before that","Alligator Alcatraz","Bill Nye the Science Guy","Racism","Fuckass MAGA idiots that post clips of them lip syncing the lyrics to American Idiot by Green Day trying to shit on the left not knowing that the song is talking about people like them","People that make fun of sexual assault victims","Hootie & the Blowfish","Kid Rock","Incest","Getting a reacharound from an extremely hunky, absolute specimen of a man","If IT happened. Do I even have to say what IT is? As in, the THING. Just IT. You know?","Joe Biden","Kamala Harris","Lego Batman","Getting fucked by Chris Hemsworth and whimpering softly in his ear during it","Having sex with a guy that has a completely unmoanable name, like Bartholomew or something","Your password not working and you changing it just for it to say you can't use an old password","People that intentionally speed up just to block you from changing lanes when you've had your turn signal on for like 10 fucking seconds","Watching the entire One Piece series on ecstasy","Larry","Bob","That one weirdo in the stall over that needs to sing a song or else they can't tinkle","Educating Make-A-Wish kids about retirement plans","That guy around the corner that has a fake eyeball that on occasion he pulls out of his eye socket and throws at people","DEI hires","A dude that's normal in every single way except he crawls like a baby on the ground instead of walking, but like literally normal besides that though","Tyler Robinson","Luigi Mangione","Kyle Rittenhouse","Thomas Matthew Crooks","Asserting dominance by staring at someone directly in their eyes without breaking eye contact even once as you piss directly on their shoes","Homophobic people","Transphobic people","That drunk girl that almost throws up mid-sentence and continues talking as if she didn't almost throw up and pass out just a second ago","Shoving the nozzle of a leaf blower up your asshole as far as you can and turning it on","Eating Play-Doh","Ultimate penetration","Anne Frank's diary","That racist white dude that thinks he isn't racist because he watched Black Panther once","Your racist grandpa's house that's littered with Confederate flags everywhere","Having a water gun fight at 8:17pm on a Tuesday","Exercising my 1st amendment rights in extremely inappropriate scenarios","Accidentally making everybody in the room painfully uncomfortable with a joke you make and trying to play it off as intentional but then going home later that day and intensely regretting it","Planned Parenthood","The fuck everybody except for the top 1% bill","Capitalism","Air pollution","Defunding cancer research","Defunding mental health services","Climate change","Income inequality","Fox News","Abortions","Going to a nudist beach but plot twist: We'll actually wear clothes","The Colorado Rockies","Leaving the stove and oven on","Putting silverware in the microwave","A bull that doesn't charge at the color red but will only charge at anybody that it can sense is incredibly horny, then it will start dry-humping them","Just straight rawdogging it","A college professor with an extremely strong Irish accent talking about very dark topics like serial killers (but he on occasion will say damn straight in a sentence)","A super muscular buff rooster that instead of doing a faint cock-a-doodle doo it goes COCK-A-DOODLE DOO in a powerful deep manly voice","A nonchalant fire alarm. Instead of loudly alerting you that there is a fire in the building and that you need to get the fuck out immediately it goes...yo like there's a fire in the building and shit, y'all better get up outta here before you burn alive type shit","Streaking","A guy that follows you around asking where the sun is on a sunny day. And after the 5th time he asks and you answer again he finally acknowledges that the sun is in fact there shining in the sky and leaves you alone","Two people sword fighting each other with crowbars instead because obviously that is a way safer alternative than actually using swords","Your friend's extremely sketchy uncle that gets you involved in a shootout somehow and now your life is completely in this strangers hands","Jeffrey Dahmer","John Wayne Gacy","Ted Bundy","Firing a rifle into the air while balls deep in a squealing hog","A stranger coming up and talking to you and you can't understand a single word they're saying so you're just smiling and nodding until they stop talking","Rappers that incriminate themselves in their own song lyrics while their defense attorney is fighting for their life trying to defend it in court","Committing crimes with both direction and magnitude. OH YEAAAAAHHHHH!","Diddy freak-offs","California","Selling my left nut on the dark web","Giving up your dreams to work at Burger King","Hiccups","Women's suffrage","A fart lol","That girl that knows her boyfriend is a piece of shit but is still convinced she can change him","Girls that write serial killers fan mail","The Taliban Pilot Academy","9-11","1 hour of silence randomly interrupted by the occasional sound of a metal pipe falling","That slutty ass 'going down' voice in the elevator","Throwing overheated toast at liberals","Al-Qaeda","The Taliban","Fidel Castro","Kim Jong Un","Vladimir Putin","Dying your ass hairs green so sheep think it's grass and start eating out your asshole","Scaling the Rockies while high listening to The Lumineers on repeat","Flipping the bird to an innocent old lady just walking down the street for no reason","Pondering if infinity is real because that renders life as a random meaningless consequence of chance","Reorganizing your entire book shelf based on the order of the authors' astrological signs","Framing an innocent black man for murder","Police brutality","George Floyd","Thinking extremely in-depth about what you want for lunch today","The song Black Sabbath in the album Black Sabbath that was created by the band Black Sabbath and performed by the band Black Sabbath","Helping your alcoholic grandpa travel through time and space","Taking so much LSD that you mentally connect with a higher power except instead of a traditional god it's a fucked up combination of an elephant, hippo, squirrel, cat, and reptile like creature that doesn't have the power to actually do anything except produce cheese","Yo momma avenue","Hiking with the hoes","Border hoppers","Whoop WHOOOOPPPPPPPPP!!!!!","Getting jumped in a random New York alleyway by the Teenage Mutant Ninja Turtles","Getting fucked up worse than Mojo Jojo after fighting The Powerpuff Girls","Smoking cat piss","Daniel Larson","Ivan","White people when green bean casserole is getting served at the function","Gerrymandering","Redlining","The DSM-5","Violence","AI","Communism","Frat guys","Sorority girls","The KKK","Going around asking people if they know the Muffin Man, and when they say they don't then proceeding to scream 'THE MUFFIN MAN!!!'","Telling the Mexican cartel bad muchacho, no Chipotle for you","Every male getting castrated","Doxxing bullies online","Nazis","People that brag about their hometown having a high crime rate because they think it makes them look tougher","Gender affirming health care","Drag queens","The pussy magnet","Gynecology","Necrophilia","NFTs","Swifties","Alvin and The Chipmunks","Lightning McQueen","Getting dunked on","Bulldozing every national park and replacing it with Tesla Cybertruck dealerships","Tesla Cybertrucks","OCD","Schizophrenia","Depression","PTSD","Breakdancing very poorly","An innocent black man","Rodney King","Parkinson's disease","Extortion","Dickshooter, Idaho","When someone tries to relate to you when you're talking about a problem you have and their situation is not at all as serious as yours so you feel like they're taking your situation way less seriously then it actually is","Mormonism","Jehovah's Witnesses","Christians","Muslims","Atheists","Ibuprofen","Taking Tylenol while pregnant","Absolutely destroying bros asshole with swift efficiency","Everyone feeling bad for you when you tell them your uncle sexually assaulted you when you were young but you lowkey liked it","Banging the freshman baddies","Cock and ball torture","QAnon","Netflix finishing your search just for it to not have the movie or show you're looking for","Naked grandma","Leftist baddies","Sailing to Valhalla with only two slices of bread and a half-empty bottle of rum","Death via firing squad","Having a dream that feels extremely realistic in the moment, then waking up and realizing that the dream made absolutely no sense","Intentionally hiring women employees so you can severely underpay them, capitalism baby fuck yeah","King Von","Voting against people's basic human rights and claiming to be morally superior to everybody else","Health insurance","Big booty Latinas","Texting while driving","Being that extremely obnoxious upstairs neighbor","Laying on the bed staring at the ceiling realizing that nobody really loves you","Oddly specific dad jokes","Actually reading the terms and conditions","Burger King Foot Lettuce. The last thing you want in your Burger King burger is someone else's foot fungus. But as it turns out, that might be what you get","Reeeeeeed Robin. Yum","People that laugh at immigrants getting deported by ICE","Hot demon bitches near you","Extremely self-righteous leftists that just purity test other people on the left instead of actually doing anything that fucking matters","OJ Simpson","Radios that play shitty ass remixes of really good songs instead of just playing the original good songs","Trayvon Martin","Taking an LSD tab and listening to Come a Little Closer by Cage The Elephant","Blowing up an orphanage to smithereens","My fatass raccoon ankles","Radioactive cow nut","Furry child porn","Eastern European gay porn","Watching your friends improve their lives and making progress while you get left behind"]
+
+      function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+      function seededShuffle(arr, rand){ let a = arr.slice(); for(let i=a.length-1;i>0;i--){ let j=Math.floor(rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a }
+      function formatSeed(s){ return s ? String(s) : String(Math.floor(Math.random()*9e9)) }
+      function idGen(){ return 'p'+Math.random().toString(36).slice(2,9) }
+
+      btnNew.addEventListener('click', ()=>{
+        page2title.textContent = 'Create Lobby'
+        createForm.style.display = 'flex'
+        joinForm.style.display = 'none'
+        lobbyView.style.display = 'none'
+        showPage(2)
+      })
+      btnJoin.addEventListener('click', ()=>{
+        page2title.textContent = 'Join Lobby'
+        createForm.style.display = 'none'
+        joinForm.style.display = 'flex'
+        lobbyView.style.display = 'none'
+        showPage(2)
+      })
+      backToMenuFromCreate.addEventListener('click', ()=> showPage(1))
+      backToMenuFromJoin.addEventListener('click', ()=> showPage(1))
+
+      createLobbyBtn.addEventListener('click', ()=>{
+        const name = (createPlayerName.value || 'Host').trim()
+        const seed = formatSeed(createLobbySeed.value.trim())
+        const pass = createLobbyPassword.value.trim()
+        const limit = parseInt(createLobbyLimit.value) || 0
+        const rand = mulberry32(parseInt(seed.slice(0,9)))
+        const pDeck = seededShuffle(playingCards, rand)
+        const prDeck = seededShuffle(promptCards, rand)
+        lobbies[seed] = {
+          seed, pass, limit: limit>0?limit:0,
+          players: [{name, id: idGen()}],
+          playingDeck: pDeck.slice(),
+          promptDeck: prDeck.slice(),
+          discardPlaying: [],
+          discardPrompt: [],
+          votes: {},
+          scores: {},
+          submissions: [],
+          currentCzar: null
+        }
+        currentLobby = lobbies[seed]
+        currentLobby.players.forEach(p=>currentLobby.scores[p.id]=0)
+        showLobby()
+        lobbySeedLabel.textContent = seed
+        lobbyPassLabel.textContent = pass? 'Yes' : 'No'
+        lobbyLimitLabel.textContent = limit>0?String(limit):'unlimited'
+        lobbyView.style.display = 'block'
+      })
+
+      joinExistingBtn.addEventListener('click', ()=>{
+        const name = (joinPlayerName.value || 'Player').trim()
+        const seed = (joinLobbySeed.value || '').trim()
+        const passAttempt = (joinLobbyPassword.value || '').trim()
+        if(!seed){ alert('Enter the lobby seed to join.'); return }
+        const lobby = lobbies[seed]
+        if(!lobby){ alert('No lobby found with that seed.'); return }
+        if(lobby.pass && lobby.pass !== passAttempt){ alert('Wrong password for that lobby.'); return }
+        if(lobby.limit>0 && lobby.players.length >= lobby.limit){ alert('Lobby is full.'); return }
+        const p = { name, id: idGen() }
+        lobby.players.push(p)
+        lobby.scores[p.id] = 0
+        currentLobby = lobby
+        showLobby()
+        lobbySeedLabel.textContent = seed
+        lobbyPassLabel.textContent = lobby.pass? 'Yes' : 'No'
+        lobbyLimitLabel.textContent = lobby.limit>0?String(lobby.limit):'unlimited'
+        lobbyView.style.display = 'block'
+      })
+
+      function showLobby(){
+        playersList.innerHTML = ''
+        currentLobby.players.forEach(p=>{
+          const d = document.createElement('div'); d.className='player-pill'; d.textContent = p.name; playersList.appendChild(d)
+        })
+        playersCount.textContent = currentLobby.players.length
+        const activeVoterEl = document.getElementById('activeVoter')
+        const activePlayerSelectEl = document.getElementById('activePlayerSelect')
+        activeVoterEl.innerHTML = ''
+        activePlayerSelectEl.innerHTML = ''
+        currentLobby.players.forEach(p=>{
+          const o = document.createElement('option'); o.value = p.id; o.textContent = p.name
+          activeVoterEl.appendChild(o.cloneNode(true))
+          activePlayerSelectEl.appendChild(o.cloneNode(true))
+        })
+      }
+
+      addLocalPlayer.addEventListener('click', ()=>{
+        const name = (fakePlayerName.value||'').trim(); if(!name) return
+        if(currentLobby && currentLobby.limit>0 && currentLobby.players.length >= currentLobby.limit){ alert('Lobby full'); return }
+        const p = { name, id: idGen() }
+        currentLobby.players.push(p)
+        currentLobby.scores[p.id] = 0
+        showLobby()
+        fakePlayerName.value = ''
+      })
+
+      leaveLobby.addEventListener('click', ()=>{
+        currentLobby = null
+        lobbyView.style.display = 'none'
+        showPage(1)
+      })
+
+      startGameBtn.addEventListener('click', ()=>{
+        if(!currentLobby) return
+        if(currentLobby.players.length < 2 && !confirm('Less than 2 players. Start anyway?')) return
+        currentLobby.votes = {}
+        currentLobby.revoteCandidates = null
+        populateVotePlayers()
+        updateVotesStatus()
+        showPage(3)
+      })
+
+      function populateVotePlayers(){
+        votePlayers.innerHTML = ''
+        currentLobby.players.forEach(p=>{
+          const btn = document.createElement('div'); btn.className='player-pill'; btn.textContent=p.name; btn.dataset.pid=p.id
+          btn.addEventListener('click', ()=>btn.classList.toggle('selected'))
+          votePlayers.appendChild(btn)
+        })
+        activeVoter.value = currentLobby.players[0].id
+      }
+
+      castVote.addEventListener('click', ()=>{
+        const voterId = activeVoter.value
+        const highlighted = Array.from(votePlayers.querySelectorAll('.player-pill.selected')).map(n=>n.dataset.pid)
+        if(highlighted.length !== 1){ alert('Please highlight exactly one player to vote for.'); return }
+        currentLobby.votes[voterId] = highlighted[0]
+        updateVotesStatus()
+        checkAllVotes()
+      })
+
+      function updateVotesStatus(){ votesStatus.textContent = `${Object.keys(currentLobby.votes).length} / ${currentLobby.players.length}` }
+
+      function checkAllVotes(){
+        if(Object.keys(currentLobby.votes).length === currentLobby.players.length){
+          const tally = {}
+          Object.values(currentLobby.votes).forEach(v=>tally[v]=(tally[v]||0)+1)
+          let max = 0
+          for(const k in tally) if(tally[k]>max) max=tally[k]
+          const winners = Object.keys(tally).filter(k=>tally[k]===max)
+          if(winners.length===1){
+            currentLobby.currentCzar = winners[0]
+            prepareGameStart()
+            showPage(4)
+          } else {
+            currentLobby.revoteCandidates = winners
+            startRevote(winners)
+          }
+        }
+      }
+
+      function startRevote(cands){
+        revoteBtn.style.display = 'inline-block'
+        Array.from(votePlayers.children).forEach(el=>{
+          el.style.display = cands.includes(el.dataset.pid) ? 'inline-flex' : 'none'
+          el.classList.remove('selected')
+        })
+        currentLobby.votes = {}
+        updateVotesStatus()
+        revoteBtn.onclick = ()=>{ revoteBtn.style.display='none'; Array.from(votePlayers.children).forEach(el=>el.style.display='inline-flex') }
+      }
+
+      function prepareGameStart(){
+        if(!currentLobby.playingDeck) currentLobby.playingDeck = seededShuffle(playingCards, mulberry32(parseInt(currentLobby.seed.slice(0,9))))
+        if(!currentLobby.promptDeck) currentLobby.promptDeck = seededShuffle(promptCards, mulberry32(parseInt(currentLobby.seed.slice(0,9))))
+        const czarId = currentLobby.currentCzar
+        currentLobby.players.forEach(p=>{
+          p.hand = p.id===czarId ? [] : drawMany(currentLobby.playingDeck,5,currentLobby)
+          p.submitted = null
+        })
+        currentLobby.currentPrompt = drawOne(currentLobby.promptDeck,currentLobby)
+        renderRound()
+      }
+
+      function drawOne(deck, lobby){
+        if(!deck) return null
+        if(deck.length===0){
+          if(lobby===currentLobby){
+            lobby.playingDeck = lobby.discardPlaying.splice(0).concat(lobby.playingDeck || [])
+            lobby.promptDeck = lobby.discardPrompt.splice(0).concat(lobby.promptDeck || [])
+          }
+        }
+        if(deck.length===0) return null
+        return deck.shift()
+      }
+      function drawMany(deck,n,lobby){ const a=[]; for(let i=0;i<n;i++){ const x=drawOne(deck,lobby); if(x==null) break; a.push(x)} return a }
+
+      function renderRound(){
+        promptRemain.textContent = currentLobby.promptDeck.length
+        playRemain.textContent = currentLobby.playingDeck.length
+        currentCzar.textContent = playerNameById(currentLobby.currentCzar)
+        promptCard.textContent = currentLobby.currentPrompt || 'No prompt left'
+        czarPile.innerHTML = ''
+        currentLobby.submissions = []
+        updateScoreboard()
+        activePlayerSelect.innerHTML = ''
+        currentLobby.players.forEach(p=>{ const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; activePlayerSelect.appendChild(o) })
+        updateHandView()
+        revealNext.onclick = revealNextCard
+        czarChoose.onclick = czarConfirmChoice
+        sendIt.onclick = playerSendIt
+        autoReveal.onclick = ()=>{ while(revealNextCard()){} }
+        nextRound.onclick = ()=> setupNextRound()
+        revealNext.style.display = 'inline-block'
+        czarChoose.style.display = 'none'
+        nextRound.style.display = 'none'
+      }
+
+      function updateHandView(){
+        const activeId = activePlayerSelect.value
+        const me = currentLobby.players.find(p=>p.id===activeId)
+        if(!me) return
+        hand.innerHTML = ''
+        if(activeId === currentLobby.currentCzar){
+          handArea.style.display = 'none'
+        } else {
+          handArea.style.display = 'block'
+          me.hand.forEach((c,idx)=>{
+            const d = document.createElement('div'); d.className='play-card'; d.textContent=c; d.dataset.idx=idx
+            d.addEventListener('click', ()=> d.classList.toggle('highlight'))
+            hand.appendChild(d)
+          })
+        }
+        renderCzarPile()
+      }
+
+      activePlayerSelect.addEventListener('change', updateHandView)
+
+      function playerSendIt(){
+        const activeId = activePlayerSelect.value
+        if(activeId === currentLobby.currentCzar){ alert('Card czar does not send cards'); return }
+        const me = currentLobby.players.find(p=>p.id===activeId)
+        const highlighted = Array.from(hand.querySelectorAll('.play-card.highlight'))
+        if(highlighted.length!==1){ alert('Highlight exactly one card to send'); return }
+        const idx = Number(highlighted[0].dataset.idx)
+        const card = me.hand.splice(idx,1)[0]
+        currentLobby.submissions.push({card, playerId: me.id, revealed:false})
+        const placeholder = document.createElement('div'); placeholder.className='play-card'; placeholder.textContent='Face-down card'; placeholder.dataset.subIndex = currentLobby.submissions.length-1
+        czarPile.appendChild(placeholder)
+        updateHandView()
+        const needed = currentLobby.players.filter(p=>p.id !== currentLobby.currentCzar).length
+        if(currentLobby.submissions.length === needed){ revealNext.style.display='inline-block' }
+      }
+
+      function renderCzarPile(){
+        czarPile.innerHTML = ''
+        currentLobby.submissions.forEach((s,idx)=>{
+          const el = document.createElement('div'); el.className='play-card'; el.textContent = s.revealed ? s.card : 'Face-down card'; el.dataset.idx = idx
+          if(s.revealed) el.classList.add('highlight')
+          el.addEventListener('click', ()=>{
+            if(currentLobby.currentCzar === activePlayerSelect.value){
+              if(s.revealed){
+                czarPile.querySelectorAll('.play-card').forEach(n=>n.classList.remove('selected'))
+                el.classList.toggle('selected')
+                czarChoose.style.display = el.classList.contains('selected') ? 'inline-block' : 'none'
+              }
+            }
+          })
+          czarPile.appendChild(el)
+        })
+      }
+
+      function revealNextCard(){ const next = currentLobby.submissions.find(s=>!s.revealed); if(!next) return false; next.revealed = true; renderCzarPile(); return true }
+
+      function czarConfirmChoice(){
+        const selected = czarPile.querySelector('.play-card.selected'); if(!selected){ alert('Select a revealed card'); return }
+        const idx = Number(selected.dataset.idx); const winnerId = currentLobby.submissions[idx].playerId
+        currentLobby.scores[winnerId] = (currentLobby.scores[winnerId]||0) + 1
+        currentLobby.discardPrompt.push(currentLobby.currentPrompt)
+        currentLobby.submissions.forEach(s=>currentLobby.discardPlaying.push(s.card))
+        currentLobby.currentCzar = winnerId
+        nextRound.style.display='inline-block'
+        revealNext.style.display='none'
+        czarChoose.style.display='none'
+        updateScoreboard()
+      }
+
+      function setupNextRound(){
+        currentLobby.players.forEach(p=>{
+          if(p.id !== currentLobby.currentCzar){
+            while((p.hand.length||0) < 5){
+              const card = drawOne(currentLobby.playingDeck,currentLobby)
+              if(!card) break
+              p.hand.push(card)
+            }
+          } else {
+            if(!p.hand || p.hand.length===0){
+              p.hand = drawMany(currentLobby.playingDeck,5,currentLobby)
+            }
+          }
+          p.submitted = null
+        })
+        currentLobby.currentPrompt = drawOne(currentLobby.promptDeck,currentLobby)
+        currentLobby.submissions = []
+        renderRound()
+      }
+
+      function updateScoreboard(){ scoreboard.innerHTML = ''; currentLobby.players.forEach(p=>{ const d = document.createElement('div'); d.className='small muted'; d.innerHTML = `<strong style="color:#fff">${p.name}</strong> — ${currentLobby.scores[p.id]||0}`; scoreboard.appendChild(d) }) }
+
+      endGameTop.addEventListener('click', ()=> endModal.style.display='flex')
+      cancelEnd.addEventListener('click', ()=> endModal.style.display='none')
+      confirmEnd.addEventListener('click', ()=>{ endModal.style.display='none'; prepareLeaderboard(); showPage(5) })
+
+      function prepareLeaderboard(){
+        const arr = currentLobby.players.map(p=>({name:p.name, score: currentLobby.scores[p.id]||0}))
+        arr.sort((a,b)=>b.score - a.score)
+        leaderboard.innerHTML = ''
+        arr.forEach((r, idx)=>{
+          const d=document.createElement('div'); d.className='card'; d.style.display='flex'; d.style.justifyContent='space-between'; d.style.alignItems='center'; d.style.marginTop='8px'
+          d.innerHTML = `<div><strong>${idx+1}. ${r.name}</strong><div class="small muted">Prompt cards won: ${r.score}</div></div>`
+          leaderboard.appendChild(d)
+        })
+      }
+
+      backToMenu2.addEventListener('click', ()=>{ currentLobby = null; showPage(1) })
+
+      function playerNameById(id){ const p = currentLobby.players.find(x=>x.id===id); return p? p.name : 'Unknown' }
+
+      activePlayerSelect.addEventListener('change', updateHandView)
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ if(endModal.style.display==='flex') endModal.style.display='none' } })
+
+      // ensure initial focus/values
+      showPage(1)
+    })();
+  </script>
+</body>
+</html>
